@@ -1,113 +1,160 @@
-⭐ Even more premium / institute-style naming
-If you're building these as a serious training academy, I would use:
-01 — PostgreSQL Database Engineering & Development
-Advanced Database Administration, Performance & Application Engineering
-02 — DevOps, Cloud & Platform Engineering
-Linux, Automation, Containers, Kubernetes & Infrastructure as Code
-03 — Cybersecurity & Security Operations Engineering
-Network Security, SIEM, Threat Detection, SOC & Incident Response
-04 — Enterprise Network Engineering with MikroTik
-Routing, Switching, Firewall, VPN, Wireless & Network Security
+## Install Each Training Project
 
+All commands below assume that Redmine is installed at `/opt/redmine` and runs under the `redmine` Linux user. Change these values if your installation uses a different directory or user.
 
-DEVOPS
+### 1. Set common variables
 
-https://github.com/redhatmurali/devops.git
+```bash
+export REDMINE_DIR="/opt/redmine"
+export REDMINE_USER="redmine"
+```
 
-# 1. Locate Redmine and its owner
-REDMINE_DIR=$(find / -xdev -type f -path '*/lib/redmine/version.rb' 2>/dev/null | head -1 | sed 's#/lib/redmine/version.rb##')
-OWNER=$(stat -c %U "$REDMINE_DIR/config/database.yml")
-echo "Redmine: $REDMINE_DIR   owner: $OWNER"
+Confirm that the directory is correct:
 
-# 2. Copy the files where that user can read them
-mkdir -p /tmp/devops
-cp /root/install_devops_project.rb /root/redmine_issues.csv /tmp/devops/
-chmod -R a+rX /tmp/devops
+```bash
+sudo -u "$REDMINE_USER" test -f \
+  "$REDMINE_DIR/config/environment.rb" \
+  && echo "Redmine directory verified"
+```
 
-# 3. Run the installer
-runuser -l "$OWNER" -s /bin/bash -c "cd $REDMINE_DIR && STUDENTS=alice,bob INSTRUCTORS=admin bundle exec rails runner -e production /tmp/devops/install_devops_project.rb"
+### 2. Prepare the project files
 
+Clone the repository if you have not already done so:
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=student1,student2 bundle exec rails runner -e production /tmp/devops/install_devops_project.rb"
+```bash
+git clone https://github.com/redhatmurali/Trainings-redmine.git
+cd Trainings-redmine
+```
 
+Create a working directory for each training domain and copy its installer and CSV dataset:
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 bundle exec rails runner -e production /tmp/devops/install_devops_project.rb"
+```bash
+sudo mkdir -p /tmp/redmine-training/{devops,cyber,mikrotik,postgresql,sapbasis,sapfico,sapmm,sapsd}
 
+sudo cp install_devops_project.rb redmine_issues.csv /tmp/redmine-training/devops/
 
-Cybersecurity 
-https://github.com/redhatmurali/devops.git
+sudo cp install_cyber_project.rb cyber_issues.csv /tmp/redmine-training/cyber/
 
-mkdir -p /tmp/cyber
-cp /root/install_cyber_project.rb /root/cyber_issues.csv /tmp/cyber/
-chmod -R a+rX /tmp/cyber
+sudo cp install_mikrotik_project.rb mikrotik_issues.csv /tmp/redmine-training/mikrotik/
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=student1,student2 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/cyber/install_cyber_project.rb"
+sudo cp 'install_postgresql_project (1).rb' 'postgresql_issues (1).csv' /tmp/redmine-training/postgresql/
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 bundle exec rails runner -e production /tmp/cyber/install_cyber_project.rb"
+sudo cp install_sapbasis_project.rb sapbasis_issues.csv /tmp/redmine-training/sapbasis/
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=student1,student2 bundle exec rails runner -e production /tmp/cyber/install_cyber_project.rb"
+sudo cp install_sapfico_project.rb sapfico_issues.csv /tmp/redmine-training/sapfico/
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=ravi,priya bundle exec rails runner -e production /tmp/cyber/install_cyber_project.rb"
+sudo cp install_sapmm_project.rb sapmm_issues.csv /tmp/redmine-training/sapmm/
 
+sudo cp install_sapsd_project.rb sapsd_issues.csv /tmp/redmine-training/sapsd/
 
-MIKROTIK
+sudo chmod -R a+rX /tmp/redmine-training
+```
 
-mkdir -p /tmp/mikrotik
-cp /root/install_mikrotik_project.rb /root/mikrotik_issues.csv /tmp/mikrotik/
-chmod -R a+rX /tmp/mikrotik
+### 3. Run the DevOps installer
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/mikrotik/install_mikrotik_project.rb"
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  STUDENTS=student1,student2 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/devops/install_devops_project.rb'
+```
 
+### 4. Run the Cybersecurity installer
 
-POSTGRES
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  STUDENTS=student1,student2 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/cyber/install_cyber_project.rb'
+```
 
-mkdir -p /tmp/postgresql
-cp /root/install_postgresql_project.rb /root/postgresql_issues.csv /tmp/postgresql/
-chmod -R a+rX /tmp/postgresql
+### 5. Run the MikroTik installer
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/postgresql/install_postgresql_project.rb"
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/mikrotik/install_mikrotik_project.rb'
+```
 
-v3
+### 6. Run the PostgreSQL installer
 
-mkdir -p /tmp/pg && cp /root/install_postgresql_project.rb /root/postgresql_issues.csv /tmp/pg/ && chmod -R a+rX /tmp/pg
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production "/tmp/redmine-training/postgresql/install_postgresql_project (1).rb"'
+```
 
-# 1. delete the old project
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && bundle exec rails runner -e production 'p = Project.find_by(identifier: \"postgresql-database-engineering-development\"); p && p.destroy; puts \"deleted\"'"
+This installer is intended for the PostgreSQL Database Engineering training project. Check the Ruby script to confirm how it reads `postgresql_issues (1).csv` and whether it requires additional environment variables.
 
-# 2. install the new one
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/pg/install_postgresql_project.rb"
+### 7. Run the SAP BASIS installer
 
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/sapbasis/install_sapbasis_project.rb'
+```
 
+### 8. Run the SAP FICO installer
 
-SAP FICO 
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/sapfico/install_sapfico_project.rb'
+```
 
-mkdir -p /tmp/sapfico
-cp /root/install_sapfico_project.rb /root/sapfico_issues.csv /tmp/sapfico/
-chmod -R a+rX /tmp/sapfico
+### 9. Run the SAP MM installer
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/sapfico/install_sapfico_project.rb"
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/sapmm/install_sapmm_project.rb'
+```
 
+### 10. Run the SAP SD installer
 
-SAP SD
+```bash
+sudo runuser -u "$REDMINE_USER" -- env \
+  TEMPLATE=1 \
+  INSTRUCTORS=admin \
+  bash -c 'cd /opt/redmine && bundle exec rails runner -e production /tmp/redmine-training/sapsd/install_sapsd_project.rb'
+```
 
-mkdir -p /tmp/sapsd && cp /root/install_sapsd_project.rb /root/sapsd_issues.csv /tmp/sapsd/ && chmod -R a+rX /tmp/sapsd
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/sapsd/install_sapsd_project.rb"
+## Student and Instructor Configuration
 
-SAP MM
+Replace the example logins with users that already exist in Redmine.
 
-mkdir -p /tmp/sapmm && cp /root/install_sapmm_project.rb /root/sapmm_issues.csv /tmp/sapmm/ && chmod -R a+rX /tmp/sapmm
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/sapmm/install_sapmm_project.rb"
+For example:
 
-SAP BASIS
+```bash
+STUDENTS=alice,bob
+INSTRUCTORS=admin
+```
 
-mkdir -p /tmp/sapbasis && cp /root/install_sapbasis_project.rb /root/sapbasis_issues.csv /tmp/sapbasis/ && chmod -R a+rX /tmp/sapbasis
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && TEMPLATE=1 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/sapbasis/install_sapbasis_project.rb"
+Some scripts support `STUDENTS`, while others may support only `INSTRUCTORS` or `TEMPLATE`. Check each script before relying on a variable.
 
+## Verify the Installation
 
+After each script finishes:
 
-For Students Active 
+1. Open the Redmine web interface.
+2. Find the corresponding training project.
+3. Confirm that its issues were created or updated as expected.
+4. Verify student assignments, instructor permissions, and issue statuses.
+5. Review the Redmine production log if an error occurs.
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=santhi bundle exec rails runner -e production /tmp/sapfico/install_sapfico_project.rb"
+```bash
+sudo tail -n 100 /opt/redmine/log/production.log
+```
 
+## Important Notes
 
-runuser -l redmine -s /bin/bash -c "cd /opt/redmine && STUDENTS=student1,student2 INSTRUCTORS=admin bundle exec rails runner -e production /tmp/sapbasis/install_sapbasis_project.rb"
+- These commands run project-provisioning scripts; they do **not** install PostgreSQL Server, SAP software, or MikroTik RouterOS.
+- The PostgreSQL training project is distinct from the database that Redmine itself uses.
+- The scripts may create, update, or delete project data depending on their implementation. Review them and back up the Redmine database before running them.
+- The commands assume the scripts can find their associated CSV files. If a script uses a hard-coded path or expects the CSV in the current directory, adjust the working directory or file path accordingly.
+- Validate each command on a staging instance before using it in production.
